@@ -62,6 +62,10 @@ public class MainActivity extends AppCompatActivity {
     private  final String SERVER_SEND_IMAGE = "SERVER_SEND_IMAGE";
     private  final String SERVER_SEND_SOUND = "SERVER_SEND_SOUND";
     private  final String CLIENT_SEND_SOUND = "CLIENT_SEND_SOUND";
+    private  final String SERVER_URL = "https://serverchatting.herokuapp.com/";
+    private  final int SERVER_PORT = 3000;
+
+
 
     private final int REQUEST_TAKE_PHOTO = 123;
     private final int REQUEST_CHOOSE_PHOTO = 321;
@@ -87,7 +91,9 @@ public class MainActivity extends AppCompatActivity {
     private Socket mSocket;
     {
         try {
-            mSocket = IO.socket("http://192.168.79.1:3000");
+            IO.Options opts = new IO.Options();
+            opts.port = SERVER_PORT;
+            mSocket = IO.socket(SERVER_URL, opts);
         } catch (URISyntaxException e) {}
     }
 
