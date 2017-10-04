@@ -24,6 +24,8 @@ import io.socket.emitter.Emitter;
 public class LoginActivity extends Activity {
     private final String SERVER_RE_LOGIN = "SERVER_RE_LOGIN";
     private final String CLIENT_LOGIN = "CLIENT_LOGIN";
+    private  final String SERVER_URL = "https://serverchatting.herokuapp.com/";
+    private  final int SERVER_PORT = 3000;
 
     private static final String TAG = RegisterActivity.class.getSimpleName();
     private Button btnLogin;
@@ -35,10 +37,10 @@ public class LoginActivity extends Activity {
     private Socket mSocket;
     {
         try {
-            mSocket = IO.socket("http://192.168.79.1:3000");
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
+            IO.Options opts = new IO.Options();
+            opts.port = SERVER_PORT;
+            mSocket = IO.socket(SERVER_URL, opts);
+        } catch (URISyntaxException e) {}
     }
 
     private Emitter.Listener onLogin = new Emitter.Listener() {

@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private  final String SERVER_SEND_SOUND = "SERVER_SEND_SOUND";
     private  final String CLIENT_SEND_SOUND = "CLIENT_SEND_SOUND";
     private  final String SERVER_URL = "https://serverchatting.herokuapp.com/";
+    //private  final String SERVER_URL_LOCAL = "http://192.168.79.1:3000";
     private  final int SERVER_PORT = 3000;
 
 
@@ -71,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
     private final int REQUEST_CHOOSE_PHOTO = 321;
 
     EditText edt;
-    Button btnLogin;
     Button btnSend;
     Button btnSendPic;
     Button btnChoose;
@@ -117,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void addControls() {
         edt = (EditText) findViewById(R.id.editText);
-        btnLogin = (Button) findViewById(R.id.buttonLogin);
         btnSend = (Button) findViewById(R.id.buttonSend);
         btnSendPic = (Button) findViewById(R.id.buttonSendPic);
         btnChoose = (Button) findViewById(R.id.buttonChoose);
@@ -133,18 +132,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addEvents() {
-        btnLogin.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                mSocket.emit(CLIENT_NEW_USER, edt.getText().toString(), new Ack() {
-                    @Override
-                    public void call(final Object... args) {
-                        boolean flag = (boolean) args[0];
-                        checkUserExists(flag);
-                    }
-                });
-            }
-        });
 
         btnSend.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -308,12 +295,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void checkUserExists(final boolean flag){
+    private void checkUserExistence(final boolean flag){
         this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 if (flag){
-                    Toast.makeText(getApplicationContext(), "Failure! Name has existed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "Failure! Email has existed", Toast.LENGTH_SHORT).show();
                 }else{
                     Toast.makeText(getApplicationContext(), "Successful", Toast.LENGTH_SHORT).show();
                 }
