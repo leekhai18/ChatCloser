@@ -295,19 +295,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void checkUserExistence(final boolean flag){
-        this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (flag){
-                    Toast.makeText(getApplicationContext(), "Failure! Email has existed", Toast.LENGTH_SHORT).show();
-                }else{
-                    Toast.makeText(getApplicationContext(), "Successful", Toast.LENGTH_SHORT).show();
-                }
-            }
-        });
-    }
-
     private Emitter.Listener onNewMessage_SendMessage = new Emitter.Listener() {
         @Override
         public void call(final Object...args) {

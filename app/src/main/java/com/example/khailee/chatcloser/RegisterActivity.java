@@ -7,6 +7,7 @@ package com.example.khailee.chatcloser;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -20,12 +21,15 @@ import io.socket.client.IO;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
+import static java.lang.Thread.sleep;
+
 public class RegisterActivity extends Activity {
     private final String CLIENT_REGISTER = "CLIENT_REGISTER";
     private final String SERVER_RE_REGISTER = "SERVER_RE_REGISTER";
     private final String SERVER_RE_CHECK_EXISTENCE = "SERVER_RE_CHECK_EXISTENCE";
-    private  final String SERVER_URL = "https://serverchatting.herokuapp.com/";
-    private  final int SERVER_PORT = 3000;
+    private final String SERVER_URL = "https://serverchatting.herokuapp.com/";
+    private final int SERVER_PORT = 3000;
+    private final String SERVER_URL_LOCAL = "http://192.168.79.1:3000";
 
     private static final String TAG = RegisterActivity.class.getSimpleName();
     private Button btnRegister;
@@ -34,15 +38,16 @@ public class RegisterActivity extends Activity {
     private EditText inputEmail;
     private EditText inputPassword;
     private ProgressDialog pDialog;
-    private boolean checkExistence;
 
     private Socket mSocket;
+
     {
         try {
             IO.Options opts = new IO.Options();
             opts.port = SERVER_PORT;
-            mSocket = IO.socket(SERVER_URL, opts);
-        } catch (URISyntaxException e) {}
+            mSocket = IO.socket(SERVER_URL_LOCAL);
+        } catch (URISyntaxException e) {
+        }
     }
 
 
@@ -70,7 +75,7 @@ public class RegisterActivity extends Activity {
         // Register Button Click event
         btnRegister.setOnClickListener(new View.OnClickListener() {
             public void onClick(View view) {
-                handleOnClickRegister();
+                sendInfoRegister();
             }
         });
 
@@ -78,81 +83,31 @@ public class RegisterActivity extends Activity {
         btnLinkToLogin.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View view) {
-                Intent i = new Intent(getApplicationContext(),
-                        LoginActivity.class);
-                startActivity(i);
-                finish();
+                launchLogin();
             }
         });
-
     }
 
-    private void handleOnClickRegister() {
-        boolean checkInfo = checkInputInfoUser();
-
-        if (checkInfo == true){
-            if (checkExistence == true){
-                Toast.makeText(getApplicationContext(), "Email has existed!", Toast.LENGTH_LONG).show();
-            } else {
-                pDialog.setMessage("Registering...");
-                showDialog();
-            }
-        } else {
-            Toast.makeText(getApplicationContext(), "Please enter your details!", Toast.LENGTH_LONG).show();
-        }
-    }
-
-    private boolean checkInputInfoUser() {
+    private void sendInfoRegister() {
         String username = inputFullName.getText().toString().trim();
         String email = inputEmail.getText().toString().trim();
         String password = inputPassword.getText().toString().trim();
 
-        if (!username.isEmpty() && !email.isEmpty() && !password.isEmpty()) {
+        boolean checkInfo = checkInputInfoUser(username, email, password);
+        if (checkInfo == true) {
             mSocket.emit(CLIENT_REGISTER, username, password, email);
-            return true;
+        } else {
+            Toast.makeText(getApplicationContext(), "Please enter your details!", Toast.LENGTH_SHORT).show();
         }
 
-        return false;
     }
 
-    private Emitter.Listener onCheckExistence = new Emitter.Listener() {
-        @Override
-        public void call(Object... args) {
-            String data =  args[0].toString();
-
-            if(data == "true"){
-                checkExistence = true;
-            }else{
-                checkExistence = false;
-            }
+    private boolean checkInputInfoUser(String username, String email, String password) {
+        if (!username.isEmpty() && !email.isEmpty() && !password.isEmpty()) {
+            return true;
         }
-    };
-
-    /**
-     * Function to store user in MySQL database will post params(tag, name,
-     * email, password) to register url
-     * */
-
-
-    private Emitter.Listener onRegister = new Emitter.Listener() {
-        @Override
-        public void call(Object... args) {
-            String data =  args[0].toString();
-
-            if(data == "true"){
-                // Launch login activity
-                Intent intent = new Intent(
-                        RegisterActivity.this,
-                        LoginActivity.class);
-                startActivity(intent);
-                finish();
-            }else{
-                Log.d("error", "can't register");
-            }
-            //   hideDialog();
-        }
-    };
-
+        return false;
+    }
 
     private void showDialog() {
         if (!pDialog.isShowing())
@@ -160,9 +115,56 @@ public class RegisterActivity extends Activity {
     }
 
     private void hideDialog() {
-        if (pDialog.isShowing()){
+        if (pDialog.isShowing()) {
             pDialog.dismiss();
             pDialog.cancel();
         }
     }
+
+    // Launch login activity
+    private void launchLogin(){
+        Intent i = new Intent(getApplicationContext(),
+                LoginActivity.class);
+        startActivity(i);
+        finish();
+    }
+
+    private Emitter.Listener onCheckExistence = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    String data = args[0].toString();
+
+                    if (data == "true") {
+                        Toast.makeText(getApplicationContext(), "Email has existed!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        pDialog.setMessage("Registering...");
+                        showDialog();
+                    }
+                }
+            });
+        }
+    };
+
+    /**
+     * Function to store user in MySQL database will post params(tag, name,
+     * email, password) to register url
+     */
+
+
+    private Emitter.Listener onRegister = new Emitter.Listener() {
+        @Override
+        public void call(Object... args) {
+            String data = args[0].toString();
+
+            if (data == "true") {
+                launchLogin();
+            } else {
+                Log.d("error", "can't register");
+            }
+            hideDialog();
+        }
+    };
 }
