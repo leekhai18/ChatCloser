@@ -27,9 +27,6 @@ public class RegisterActivity extends Activity {
     private final String CLIENT_REGISTER = "CLIENT_REGISTER";
     private final String SERVER_RE_REGISTER = "SERVER_RE_REGISTER";
     private final String SERVER_RE_CHECK_EXISTENCE = "SERVER_RE_CHECK_EXISTENCE";
-    private final String SERVER_URL = "https://serverchatting.herokuapp.com/";
-    private final int SERVER_PORT = 3000;
-    private final String SERVER_URL_LOCAL = "http://192.168.79.1:3000";
 
     private static final String TAG = RegisterActivity.class.getSimpleName();
     private Button btnRegister;
@@ -41,22 +38,12 @@ public class RegisterActivity extends Activity {
 
     private Socket mSocket;
 
-    {
-        try {
-            IO.Options opts = new IO.Options();
-            opts.port = SERVER_PORT;
-            mSocket = IO.socket(SERVER_URL_LOCAL);
-        } catch (URISyntaxException e) {
-        }
-    }
-
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        mSocket.connect();
+        mSocket = SingletonSocket.getInstance().mSocket;
 
         inputFullName = (EditText) findViewById(R.id.name);
         inputEmail = (EditText) findViewById(R.id.email);
@@ -156,15 +143,20 @@ public class RegisterActivity extends Activity {
 
     private Emitter.Listener onRegister = new Emitter.Listener() {
         @Override
-        public void call(Object... args) {
-            String data = args[0].toString();
+        public void call(final Object... args) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    String data = args[0].toString();
 
-            if (data == "true") {
-                launchLogin();
-            } else {
-                Log.d("error", "can't register");
-            }
-            hideDialog();
+                    if (data == "true") {
+                        launchLogin();
+                    } else {
+                        Log.d("error", "can't register");
+                    }
+                    hideDialog();
+                }
+            });
         }
     };
 }

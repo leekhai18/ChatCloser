@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private  final String SERVER_SEND_SOUND = "SERVER_SEND_SOUND";
     private  final String CLIENT_SEND_SOUND = "CLIENT_SEND_SOUND";
     private  final String SERVER_URL = "https://serverchatting.herokuapp.com/";
-    //private  final String SERVER_URL_LOCAL = "http://192.168.79.1:3000";
+    private  final String SERVER_URL_LOCAL = "http://192.168.79.1:3000";
     private  final int SERVER_PORT = 3000;
 
 
@@ -89,13 +89,6 @@ public class MainActivity extends AppCompatActivity {
     Recorder recorder;
 
     private Socket mSocket;
-    {
-        try {
-            IO.Options opts = new IO.Options();
-            opts.port = SERVER_PORT;
-            mSocket = IO.socket(SERVER_URL, opts);
-        } catch (URISyntaxException e) {}
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initSocket() {
+        mSocket = SingletonSocket.getInstance().mSocket;
+
         mSocket.on(SERVER_LIST_USER_ONLINE, onNewMessage_UsersOnline);
         mSocket.on(SERVER_SEND_MESSAGE, onNewMessage_SendMessage);
         mSocket.on(SERVER_SEND_IMAGE, onNewMessage_SendImage);

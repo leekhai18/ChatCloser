@@ -24,8 +24,7 @@ import io.socket.emitter.Emitter;
 public class LoginActivity extends Activity {
     private final String SERVER_RE_LOGIN = "SERVER_RE_LOGIN";
     private final String CLIENT_LOGIN = "CLIENT_LOGIN";
-    private  final String SERVER_URL = "https://serverchatting.herokuapp.com/";
-    private  final int SERVER_PORT = 3000;
+
 
     private static final String TAG = RegisterActivity.class.getSimpleName();
     private Button btnLogin;
@@ -35,32 +34,6 @@ public class LoginActivity extends Activity {
     private ProgressDialog pDialog;
 
     private Socket mSocket;
-    {
-        try {
-            IO.Options opts = new IO.Options();
-            opts.port = SERVER_PORT;
-            mSocket = IO.socket(SERVER_URL, opts);
-        } catch (URISyntaxException e) {}
-    }
-
-    private Emitter.Listener onLogin = new Emitter.Listener() {
-        @Override
-        public void call(Object... args) {
-            String data =  args[0].toString();
-
-            if(data == "true"){
-                Intent intent = new Intent(LoginActivity.this,
-                        MainActivity.class);
-                startActivity(intent);
-                finish();
-            }else{
-                Log.d("error", "cant login");
-            }
-
-            hideDialog();
-
-        }
-    };
 
 
     @Override
@@ -68,9 +41,15 @@ public class LoginActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        mSocket.connect();
-
+        mSocket = SingletonSocket.getInstance().mSocket;
         mSocket.on(SERVER_RE_LOGIN, onLogin);
+
+        //mSocket.connect();
+        if (! mSocket.connected()) {
+            mSocket.connect();
+        }
+
+
 
 
 
@@ -81,7 +60,7 @@ public class LoginActivity extends Activity {
 
         // Progress dialog
         pDialog = new ProgressDialog(this);
-        pDialog.setCancelable(false);
+        pDialog.setCancelable(true);
 
 
 
@@ -98,9 +77,7 @@ public class LoginActivity extends Activity {
                     checkLogin(email, password);
                 } else {
                     // Prompt user to enter credentials
-                    Toast.makeText(getApplicationContext(),
-                            "Please enter the credentials!", Toast.LENGTH_LONG)
-                            .show();
+                    Toast.makeText(getApplicationContext(), "Please enter the credentials!", Toast.LENGTH_LONG).show();
                 }
             }
 
@@ -122,11 +99,10 @@ public class LoginActivity extends Activity {
     private void checkLogin(final String email, final String password) {
         // Tag used to cancel the request
 
-        pDialog.setMessage("Logging in ...");
+        pDialog.setMessage("Logging in...");
         showDialog();
 
         mSocket.emit(CLIENT_LOGIN, email, password);
-
     }
 
 
@@ -136,7 +112,33 @@ public class LoginActivity extends Activity {
     }
 
     private void hideDialog() {
-        if (pDialog.isShowing())
+        if (pDialog.isShowing()) {
             pDialog.dismiss();
+            pDialog.cancel();
+        }
     }
+
+
+
+    private Emitter.Listener onLogin = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    String data =  args[0].toString();
+
+                    if(data == "true"){
+                        Intent intent = new Intent(LoginActivity.this,
+                                MainActivity.class);
+                        startActivity(intent);
+                        finish();
+                    }else{
+                        hideDialog();
+                        Toast.makeText(getApplicationContext(), "Email or password is wrong", Toast.LENGTH_LONG).show();
+                    }
+                }
+            });
+        }
+    };
 }
