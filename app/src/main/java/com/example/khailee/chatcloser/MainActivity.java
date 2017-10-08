@@ -62,12 +62,9 @@ public class MainActivity extends AppCompatActivity {
     private  final String SERVER_SEND_IMAGE = "SERVER_SEND_IMAGE";
     private  final String SERVER_SEND_SOUND = "SERVER_SEND_SOUND";
     private  final String CLIENT_SEND_SOUND = "CLIENT_SEND_SOUND";
-    private  final String SERVER_URL = "https://serverchatting.herokuapp.com/";
-    private  final String SERVER_URL_LOCAL = "http://192.168.79.1:3000";
-    private  final int SERVER_PORT = 3000;
-
-
-
+    private  final String SERVER_UPDATE_STATE_TO_OTHERS = "SERVER_UPDATE_STATE_TO_OTHERS";
+    private  final String USER_STATE = "USER_STATE";
+    private  final String SERVER_UPDATE_FRIENDS_ONLINE = "SERVER_UPDATE_FRIENDS_ONLINE";
     private final int REQUEST_TAKE_PHOTO = 123;
     private final int REQUEST_CHOOSE_PHOTO = 321;
 
@@ -84,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
     ImageView imgView;
     ListView lvUsersLogin;
     ListView lvChatBox;
-    ArrayList<String> listUserOn;
+    ArrayList<String> listFriendsOnline = new ArrayList<String>();
     ArrayList<String> listMessage = new ArrayList<String>();
     Recorder recorder;
 
@@ -103,11 +100,11 @@ public class MainActivity extends AppCompatActivity {
     private void initSocket() {
         mSocket = SingletonSocket.getInstance().mSocket;
 
-        mSocket.on(SERVER_LIST_USER_ONLINE, onNewMessage_UsersOnline);
+        mSocket.on(SERVER_UPDATE_STATE_TO_OTHERS, onNewMessage_UpdateStateToOthers);
+        mSocket.on(SERVER_UPDATE_FRIENDS_ONLINE, onNewMessage_UpdateFriendsOnline);
         mSocket.on(SERVER_SEND_MESSAGE, onNewMessage_SendMessage);
         mSocket.on(SERVER_SEND_IMAGE, onNewMessage_SendImage);
         mSocket.on(SERVER_SEND_SOUND, onNewMessage_SendSound);
-        mSocket.connect();
     }
 
     private void addControls() {
@@ -313,7 +310,37 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private Emitter.Listener onNewMessage_UsersOnline = new Emitter.Listener() {
+    private Emitter.Listener onNewMessage_UpdateStateToOthers = new Emitter.Listener() {
+        @Override
+        public void call(final Object...args) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    JSONObject data = (JSONObject) args[0];
+
+                    String userEmail;
+                    String state;
+                    try {
+                        lvUsersLogin = (ListView) findViewById(R.id.listViewUsersLogin);
+                        userEmail = data.getString(SERVER_UPDATE_STATE_TO_OTHERS);
+                        state = data.getString(USER_STATE);
+                        if (state.equals("online")) {
+                            listFriendsOnline.add(userEmail);
+                        } else {
+                            listFriendsOnline.remove(userEmail);
+                        }
+
+                        ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, listFriendsOnline);
+                        lvUsersLogin.setAdapter(adapter);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    };
+
+    private Emitter.Listener onNewMessage_UpdateFriendsOnline = new Emitter.Listener() {
         @Override
         public void call(final Object...args) {
             runOnUiThread(new Runnable() {
@@ -323,17 +350,18 @@ public class MainActivity extends AppCompatActivity {
 
                     JSONArray array;
                     try {
-                        array = data.getJSONArray(SERVER_LIST_USER_ONLINE);
                         lvUsersLogin = (ListView) findViewById(R.id.listViewUsersLogin);
-                        listUserOn = new ArrayList<String>();
-                        for (int i = 0; i < array.length(); i++)
-                        {
-                            listUserOn.add(array.get(i).toString());
+                        array = data.getJSONArray(SERVER_UPDATE_FRIENDS_ONLINE);
+                        if (array != null) {
+                            for (int i = 0; i < array.length(); i++){
+                                listFriendsOnline.add(array.getString(i));
+                            }
                         }
-                        ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, listUserOn);
+
+                        ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, listFriendsOnline);
                         lvUsersLogin.setAdapter(adapter);
                     } catch (JSONException e) {
-                        return;
+                        e.printStackTrace();
                     }
                 }
             });
