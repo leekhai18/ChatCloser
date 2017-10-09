@@ -19,6 +19,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -82,6 +83,7 @@ public class MainActivity extends AppCompatActivity {
     ListView lvUsersLogin;
     ListView lvChatBox;
     ArrayList<String> listFriendsOnline = new ArrayList<String>();
+    ArrayAdapter adapterListFriend;
     ArrayList<String> listMessage = new ArrayList<String>();
     Recorder recorder;
 
@@ -102,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
 
         mSocket.on(SERVER_UPDATE_STATE_TO_OTHERS, onNewMessage_UpdateStateToOthers);
         mSocket.on(SERVER_UPDATE_FRIENDS_ONLINE, onNewMessage_UpdateFriendsOnline);
-        mSocket.on(SERVER_SEND_MESSAGE, onNewMessage_SendMessage);
+        //mSocket.on(SERVER_SEND_MESSAGE, onNewMessage_SendMessage);
         mSocket.on(SERVER_SEND_IMAGE, onNewMessage_SendImage);
         mSocket.on(SERVER_SEND_SOUND, onNewMessage_SendSound);
     }
@@ -121,6 +123,12 @@ public class MainActivity extends AppCompatActivity {
         imgView = (ImageView) findViewById(R.id.imageView);
 
         recorder = new Recorder(this);
+
+
+        // setting for listview on Friends Online feature
+        lvUsersLogin = (ListView) findViewById(R.id.listViewUsersLogin);
+        adapterListFriend = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, listFriendsOnline);
+        lvUsersLogin.setAdapter(adapterListFriend);
     }
 
     private void addEvents() {
@@ -187,6 +195,21 @@ public class MainActivity extends AppCompatActivity {
                 getRecordFromServer();
             }
         });
+
+        lvUsersLogin.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                launchChatRoom("MEM_ROOM", listFriendsOnline.get(i));
+            }
+        });
+    }
+
+    // Launch chatRoom activity
+    private void launchChatRoom(String key, String data){
+        Intent i = new Intent(getApplicationContext(), ChatRoomActivity.class);
+        i.putExtra(key, data);
+        startActivity(i);
+        finish();
     }
 
     private void sendImage() {
@@ -287,19 +310,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private Emitter.Listener onNewMessage_SendMessage = new Emitter.Listener() {
+ /*   private Emitter.Listener onNewMessage_SendMessage = new Emitter.Listener() {
         @Override
         public void call(final Object...args) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     JSONObject data = (JSONObject) args[0];
-
                     String message;
                     try {
                         lvChatBox = (ListView) findViewById(R.id.listViewChatBox);
                         message = data.getString(SERVER_SEND_MESSAGE);
                         listMessage.add(message);
+
+                        // Adapter nen tao truoc voi mang trong. roi trong nay chi can
+                        // adapter.notifyDataSetChanged();
+
                         ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, listMessage);
                         lvChatBox.setAdapter(adapter);
                     } catch (JSONException e) {
@@ -308,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
-    };
+    };*/
 
     private Emitter.Listener onNewMessage_UpdateStateToOthers = new Emitter.Listener() {
         @Override
@@ -321,7 +347,6 @@ public class MainActivity extends AppCompatActivity {
                     String userEmail;
                     String state;
                     try {
-                        lvUsersLogin = (ListView) findViewById(R.id.listViewUsersLogin);
                         userEmail = data.getString(SERVER_UPDATE_STATE_TO_OTHERS);
                         state = data.getString(USER_STATE);
                         if (state.equals("online")) {
@@ -329,9 +354,7 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             listFriendsOnline.remove(userEmail);
                         }
-
-                        ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, listFriendsOnline);
-                        lvUsersLogin.setAdapter(adapter);
+                        adapterListFriend.notifyDataSetChanged();
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -350,7 +373,6 @@ public class MainActivity extends AppCompatActivity {
 
                     JSONArray array;
                     try {
-                        lvUsersLogin = (ListView) findViewById(R.id.listViewUsersLogin);
                         array = data.getJSONArray(SERVER_UPDATE_FRIENDS_ONLINE);
                         if (array != null) {
                             for (int i = 0; i < array.length(); i++){
@@ -358,8 +380,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
 
-                        ArrayAdapter adapter = new ArrayAdapter(getApplicationContext(), android.R.layout.simple_list_item_1, listFriendsOnline);
-                        lvUsersLogin.setAdapter(adapter);
+                        adapterListFriend.notifyDataSetChanged();
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
